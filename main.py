@@ -3,7 +3,7 @@ import functions
 from brain import ollama_brain
 
 def iniciar_sistema():
-    print("--- Inicializando Jarvis ---")
+    print("--- Inicializando Omega ---")
     nome = input("Digite seu nome: ")
     try:
         idade = int(input("Digite sua idade: "))
@@ -29,56 +29,56 @@ def iniciar_sistema():
         except ValueError:
             print("Por favor, digite a senha em números.")
 
-    print(f"\nOlá, {nome}! Bem-vindo(a) ao programa. Eu sou o Jarvis.")
+    print(f"\nOlá, {nome}! Bem-vindo(a) ao sistema. Eu sou o Omega.")
     return nome, idade
 
 def menu():
     print('\n' + '='*30)
-    print(' Como posso ajudar você?')
+    print(' O que deseja fazer?')
     print('='*30)
-    print('1 - Saber a hora atual')
-    print('2 - Saber a data atual')
-    print('3 - Saber sua idade em dias')
-    print('4 - Iniciar a calculadora')
-    print('5 - Conversar com Jarvis (IA)')
+    print('1 - Conversar com Omega')
     print('0 - Sair')
     print('='*30)
 
-def script(nome, idade):
+def script(nome, idade, memoria):
     try:
         opcao = int(input("Digite a opção desejada: "))
 
         if opcao == 1:
-            hora = time.localtime()
-            print(f"Hora atual: {hora.tm_hour:02d}:{hora.tm_min:02d}:{hora.tm_sec:02d}")
-
-        elif opcao == 2:
-            data = time.localtime()
-            print(f"Data atual: {data.tm_mday:02d}/{data.tm_mon:02d}/{data.tm_year}")
-
-        elif opcao == 3:
-            idade_dias = idade * 365
-            print(f"Sua idade aproximada em dias é: {idade_dias} dias")
-
-        elif opcao == 4:
-            functions.calculadora()
-
-        elif opcao == 5:
             print("\n--- Modo de Conversa Ativado (Digite 'sair' para voltar ao menu) ---")
             while True:
                 pergunta = input(f"{nome}: ")
                 if pergunta.lower() in ['sair', 'exit', 'quit']:
                     print("Encerrando conversa... Voltando ao menu.")
                     break
-                elif "hora" in pergunta.lower():
-                    print(f"Jarvis: A hora atual é {functions.obter_hora()}.")
+
+                # Tratamento de hora/data com salvamento na memória
+                if "hora" in pergunta.lower():
+                    res_hora = f"A hora atual é {functions.obter_hora()}."
+                    print(f"Omega: {res_hora}")
+                    memoria.append({'role': 'user', 'content': pergunta})
+                    memoria.append({'role': 'assistant', 'content': res_hora})
+                    functions.salvar_memoria(memoria)
                     continue
                 elif "data" in pergunta.lower():
-                    print(f"Jarvis: A data atual é {functions.obter_data()}.")
+                    res_data = f"A data atual é {functions.obter_data()}."
+                    print(f"Omega: {res_data}")
+                    memoria.append({'role': 'user', 'content': pergunta})
+                    memoria.append({'role': 'assistant', 'content': res_data})
+                    functions.salvar_memoria(memoria)
                     continue
-                print("Jarvis pensando...", end="\r")
-                resposta = ollama_brain.perguntar(pergunta)
-                print(f"Jarvis: {resposta}")
+
+                # Fluxo normal de IA:
+                memoria.append({'role': 'user', 'content': pergunta})
+                functions.salvar_memoria(memoria)
+
+                print("Omega pensando...", end="\r")
+                resposta = ollama_brain.perguntar(pergunta, memoria)
+                print(f"Omega: {resposta}")
+
+                memoria.append({'role': 'assistant', 'content': resposta})
+                functions.salvar_memoria(memoria)
+
         elif opcao == 0:
             return False
         else:
@@ -92,11 +92,19 @@ def script(nome, idade):
 if __name__ == "__main__":
     user_nome, user_idade = iniciar_sistema()
 
+    # Carregamos a memória do arquivo JSON logo ao iniciar
+    memoria_global = functions.carregar_memoria()
+
+    # Se a memória estiver vazia, definimos a personalidade do Omega
+    if not memoria_global:
+        memoria_global.append({
+            'role': 'system',
+            'content': 'Você é Omega, um assistente pessoal inteligente. Sua principal missão é aprender e se adaptar à personalidade, tom e preferências do usuário ao longo do tempo, tornando-se um reflexo perfeito de suas necessidades.'
+        })
+        functions.salvar_memoria(memoria_global)
+
     while True:
         menu()
-        if not script(user_nome, user_idade):
+        if not script(user_nome, user_idade, memoria_global):
             print("Encerrando o sistema... Até logo!")
             break
-
-        # Opcional: Perguntar se quer continuar ou apenas voltar ao menu
-        # Aqui vou fazer voltar ao menu automaticamente para ser mais fluido

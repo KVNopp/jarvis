@@ -1,4 +1,22 @@
 import time
+import json
+
+
+
+
+
+
+def salvar_memoria(memoria, nome_arquivo="memoria.json"):
+    with open(nome_arquivo, 'w') as arquivo:
+        json.dump(memoria, arquivo)
+
+def carregar_memoria(nome_arquivo="memoria.json"):
+    try:
+        with open(nome_arquivo, 'r') as arquivo:
+            memoria = json.load(arquivo)
+    except FileNotFoundError:
+        memoria = []
+    return memoria
 
 def calculadora():
     print("Calculadora iniciada.")

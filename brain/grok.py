@@ -20,3 +20,4 @@ def perguntar(mensagem):
     chat.append(user(mensagem))
     response = chat.sample()
     return response.content
+# um dia eu volto para adicionar o grok com um sistema de memória, mas por enquanto vou deixar ele desativado, pois nao tenho grana!
