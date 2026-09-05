@@ -1,0 +1,1 @@
+Esse sera meu primeiro agente usando de Inteligencia Artificial. Usando em maioria a linguagem python, farei um agente que me atenda e me ajude a desenvolver minhas habilidades com a logica da programaçao e aprender sobre as linguagens!
