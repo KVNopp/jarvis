@@ -1,4 +1,4 @@
-﻿"""Interface desktop do Omega. Execute: python interface.py."""
+"""Interface desktop do Omega. Execute: python interface.py."""
 import queue
 import threading
 import tkinter as tk
@@ -8,12 +8,13 @@ from tkinter.scrolledtext import ScrolledText
 from config import MODELO
 from main import AJUDA, CidadeNecessaria, responder
 from memory import ErroMemoria, carregar_memoria, salvar_memoria
+from visualizer import AnelOmega
 
-BG = '#10131b'
-PANEL = '#191e2a'
-TEXT = '#e9edf7'
-MUTED = '#9ba8bf'
-ACCENT = '#8fe3cd'
+BG = '#08060d'
+PANEL = '#100b18'
+TEXT = '#f1eafa'
+MUTED = '#ad9bbb'
+ACCENT = '#c084fc'
 
 
 class OmegaApp:
@@ -25,7 +26,7 @@ class OmegaApp:
         self.memoria = carregar_memoria()
         root.title('Omega | Assistente pessoal')
         root.geometry('1060x760')
-        root.minsize(760, 560)
+        root.minsize(760, 700)
         root.configure(bg=BG)
         root.protocol('WM_DELETE_WINDOW', self.fechar)
         root.grid_rowconfigure(0, weight=1)
@@ -35,7 +36,13 @@ class OmegaApp:
         lateral.grid(row=0, column=0, sticky='nsew')
         lateral.grid_propagate(False)
         self.label(lateral, 'O M E G A', 23, ACCENT).pack(anchor='w')
-        self.label(lateral, 'Seu assistente pessoal', 10, MUTED).pack(anchor='w', pady=(6, 34))
+        self.label(lateral, 'Seu assistente pessoal', 10, MUTED).pack(anchor='w', pady=(6, 4))
+        self.anel = AnelOmega(lateral, fundo=PANEL)
+        self.anel.pack(fill='x', pady=(0, 2))
+        self.animacao_botao = tk.Button(lateral, text='Pausar animação', command=self.alternar_animacao,
+                                       bg=PANEL, fg=MUTED, activebackground=PANEL,
+                                       activeforeground=ACCENT, relief='flat', cursor='hand2')
+        self.animacao_botao.pack(pady=(0, 12))
         self.label(lateral, 'ATALHOS', 9, MUTED).pack(anchor='w', pady=(0, 12))
         self.atalhos = []
         for titulo, comando in [('Hora atual', '/hora'), ('Data de hoje', '/data'),
@@ -56,10 +63,10 @@ class OmegaApp:
         self.label(principal, 'Ideias, dúvidas e tarefas do dia a dia.', 11, MUTED, BG).grid(row=1, column=0, sticky='w', pady=(6, 20))
         self.chat = ScrolledText(principal, wrap='word', bg=BG, fg=TEXT, relief='flat',
                                  font=('Segoe UI', 11), padx=16, pady=16,
-                                 insertbackground=TEXT, selectbackground='#34445d', state='disabled')
+                                 insertbackground=TEXT, selectbackground='#532875', state='disabled')
         self.chat.grid(row=2, column=0, sticky='nsew')
         self.chat.tag_configure('user', foreground=ACCENT, font=('Segoe UI', 10, 'bold'), spacing1=16, spacing3=6)
-        self.chat.tag_configure('assistant', foreground='#b4baff', font=('Segoe UI', 10, 'bold'), spacing1=16, spacing3=6)
+        self.chat.tag_configure('assistant', foreground='#d9b3ff', font=('Segoe UI', 10, 'bold'), spacing1=16, spacing3=6)
         self.chat.tag_configure('info', foreground=MUTED, spacing1=12, spacing3=10)
         self.chat.tag_configure('body', spacing3=18)
         self.status = tk.StringVar(value='Pronto para conversar')
@@ -95,8 +102,8 @@ class OmegaApp:
         return tk.Label(parent, text=texto, bg=fundo, fg=cor, font=('Segoe UI', tamanho), anchor='w')
 
     def botao(self, parent, texto, comando, destaque=False):
-        return tk.Button(parent, text=texto, command=comando, bg=ACCENT if destaque else '#252d3e',
-                         fg=BG if destaque else TEXT, activebackground='#b5f2e2', activeforeground=BG,
+        return tk.Button(parent, text=texto, command=comando, bg=ACCENT if destaque else '#261536',
+                         fg=BG if destaque else TEXT, activebackground='#dfb5ff', activeforeground=BG,
                          relief='flat', borderwidth=0, padx=12, pady=10, cursor='hand2', font=('Segoe UI', 10))
 
     def mensagem(self, papel, texto):
@@ -129,11 +136,16 @@ class OmegaApp:
 
     def definir_ocupado(self, valor):
         self.ocupado = valor
+        self.anel.ativo = valor
         estado = 'disabled' if valor else 'normal'
         self.enviar_botao.configure(state=estado)
         for botao in self.atalhos:
             botao.configure(state=estado)
         self.status.set('Omega pensando...' if valor else 'Pronto para conversar')
+
+    def alternar_animacao(self):
+        pausado = self.anel.alternar()
+        self.animacao_botao.configure(text='Retomar animação' if pausado else 'Pausar animação')
 
     def enviar(self):
         if self.ocupado:
@@ -151,7 +163,7 @@ class OmegaApp:
                 messagebox.showinfo('Memória', f'{len(self.memoria)} registros salvos.', parent=self.root)
             self.entrada.delete('1.0', 'end')
             return
-        if pergunta.startswith('/') and pergunta.split()[0].lower() not in {'/hora', '/data', '/clima', '/buscar'}:
+        if pergunta.startswith('/') and pergunta.split()[0].lower() not in {'/hora', '/data', '/clima', '/buscar', '/abrir', '/apps'}:
             self.mensagem('info', 'Comando desconhecido. Consulte Ajuda e comandos.')
             return
         self.pergunta = pergunta

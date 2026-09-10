@@ -1,5 +1,6 @@
 ﻿"""Omega: conversa direta no terminal, sem login."""
 import functions
+import computer
 from brain import ollama_brain
 from config import MODELO
 from memory import ErroMemoria, carregar_memoria, salvar_memoria
@@ -9,6 +10,8 @@ AJUDA = '''Comandos
   /hora ou /data      Consultar sem depender da IA
   /clima São Paulo   Consultar o clima de uma cidade
   /buscar assunto    Pesquisar na web
+  /abrir aplicativo  Abrir um aplicativo no computador
+  /apps              Listar aplicativos compatíveis
   /memoria           Ver quantas mensagens estão guardadas
   /sair              Encerrar
 Você também pode perguntar normalmente.'''
@@ -25,6 +28,11 @@ class CidadeNecessaria(Exception):
 
 
 def responder(pergunta, memoria, *, interativo=True):
+    if pergunta.strip().lower() == '/apps':
+        return computer.listar_apps()
+    aplicativo = computer.pedido_abertura(pergunta)
+    if aplicativo is not None:
+        return computer.abrir_app(aplicativo)
     comando, _, argumento = pergunta.partition(' ')
     rotas = {'/hora': 'HORA', '/data': 'DATA', '/clima': 'CLIMA', '/buscar': 'WEB'}
     if comando.lower() in rotas:
@@ -81,7 +89,7 @@ def executar():
             if comando == '/memoria':
                 print(f'Omega: {len(memoria)} registros preservados em memoria.json.')
                 continue
-            if pergunta.startswith('/') and pergunta.split()[0].lower() not in {'/hora', '/data', '/clima', '/buscar'}:
+            if pergunta.startswith('/') and pergunta.split()[0].lower() not in {'/hora', '/data', '/clima', '/buscar', '/abrir', '/apps'}:
                 print('Comando desconhecido. Digite /ajuda.')
                 continue
             print(AVISO_PENSANDO, end='', flush=True)

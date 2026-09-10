@@ -75,3 +75,17 @@ atalhos, texto selecionável e as 60 mensagens mais recentes. Enter envia; Shift
 A IA trabalha em segundo plano. O clima solicita a cidade em uma janela quando necessário.
 A interface compartilha a memória com o terminal: use apenas um deles por vez.
 O terminal continua disponível com `python main.py`.
+
+## Abrir aplicativos
+
+Na interface ou no terminal, diga `abra a calculadora`, `abra o Chrome` ou use
+`/abrir vscode`. `/apps` mostra os aplicativos cadastrados. A ação funciona sem Ollama.
+
+Suporte inicial: Calculadora, Bloco de Notas, Paint, Explorador de Arquivos, Chrome,
+Edge, VS Code e Spotify. O aplicativo precisa estar instalado em um dos caminhos
+conhecidos de `computer.py`; instalações personalizadas e algumas versões da Store
+podem não ser encontradas. Novos aplicativos podem ser cadastrados no dicionário `APPS`.
+
+A abertura usa executáveis cadastrados, sem shell nem argumentos livres. O Omega
+informa que solicitou a abertura ao Windows; não verifica o conteúdo da janela.
+Esta versão abre aplicativos, mas ainda não clica, digita ou controla suas janelas.
