@@ -20,7 +20,11 @@ def limpar_aviso_pensando():
     print('\r' + ' ' * len(AVISO_PENSANDO) + '\r', end='', flush=True)
 
 
-def responder(pergunta, memoria):
+class CidadeNecessaria(Exception):
+    """A interface deve pedir a cidade antes de continuar a consulta."""
+
+
+def responder(pergunta, memoria, *, interativo=True):
     comando, _, argumento = pergunta.partition(' ')
     rotas = {'/hora': 'HORA', '/data': 'DATA', '/clima': 'CLIMA', '/buscar': 'WEB'}
     if comando.lower() in rotas:
@@ -32,6 +36,8 @@ def responder(pergunta, memoria):
     if intencao == 'DATA':
         return f'Hoje é {functions.obter_data()}.'
     if intencao == 'CLIMA':
+        if not consulta and not interativo:
+            raise CidadeNecessaria()
         if not consulta:
             limpar_aviso_pensando()
         cidade = consulta or input('Cidade: ').strip()
@@ -40,8 +46,9 @@ def responder(pergunta, memoria):
         return functions.obter_clima(cidade)
     if intencao == 'WEB':
         consulta = consulta or pergunta
-        limpar_aviso_pensando()
-        print(f'  Pesquisando: {consulta}')
+        if interativo:
+            limpar_aviso_pensando()
+            print(f'  Pesquisando: {consulta}')
         fontes = functions.buscar_na_web(consulta)
         resposta = ollama_brain.perguntar(pergunta, memoria, contexto_web=fontes)
         return resposta + '\n\nFontes consultadas:\n' + '\n'.join(f"- {f['title']}: {f['href']}" for f in fontes)

@@ -63,3 +63,15 @@ Esse sera meu primeiro agente usando de Inteligencia Artificial. Usando em maior
      - WEB $\rightarrow$ Otimiza a busca, pesquisa no DuckDuckGo e processa a resposta.
      - CONVERSA $\rightarrow$ Responde normalmente usando o conhecimento interno.
   3. Otimização da Memória: Organizei a forma como o Omega salva a memória no main.py para evitar que o código ficasse repetitivo e lento.
+
+## Interface gráfica
+
+```powershell
+python interface.py
+```
+
+A janela usa Tkinter (incluído na instalação padrão do Python para Windows), tema escuro,
+atalhos, texto selecionável e as 60 mensagens mais recentes. Enter envia; Shift+Enter cria uma nova linha.
+A IA trabalha em segundo plano. O clima solicita a cidade em uma janela quando necessário.
+A interface compartilha a memória com o terminal: use apenas um deles por vez.
+O terminal continua disponível com `python main.py`.
