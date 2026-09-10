@@ -1,0 +1,7 @@
+﻿.env
+__pycache__/
+*.pyc
+memoria*.json
+memoria*.bak
+memoria*.tmp
+.venv/

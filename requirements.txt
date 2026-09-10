@@ -1,0 +1,4 @@
+﻿requests
+ollama
+duckduckgo-search
+python-dotenv

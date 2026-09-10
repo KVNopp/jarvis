@@ -1,22 +1,46 @@
+"""Consultas externas com limites de espera e erros recuperáveis."""
+import os
 import time
-import json
+import requests
+from duckduckgo_search import DDGS
+from memory import carregar_memoria, salvar_memoria
 
+class ErroServico(Exception):
+    pass
 
-
-
-
-
-def salvar_memoria(memoria, nome_arquivo="memoria.json"):
-    with open(nome_arquivo, 'w') as arquivo:
-        json.dump(memoria, arquivo)
-
-def carregar_memoria(nome_arquivo="memoria.json"):
+def obter_clima(cidade):
+    chave = os.getenv('OPENWEATHER_API_KEY', '').strip()
+    if not chave:
+        raise ErroServico('Configure OPENWEATHER_API_KEY no arquivo .env para consultar o clima.')
     try:
-        with open(nome_arquivo, 'r') as arquivo:
-            memoria = json.load(arquivo)
-    except FileNotFoundError:
-        memoria = []
-    return memoria
+        resposta = requests.get('https://api.openweathermap.org/data/2.5/weather',
+            params={'q': cidade, 'appid': chave, 'units': 'metric', 'lang': 'pt_br'}, timeout=(5, 15))
+        if resposta.status_code == 404:
+            raise ErroServico('Cidade não encontrada. Tente incluir o país, por exemplo: São Paulo,BR.')
+        if resposta.status_code == 401:
+            raise ErroServico('A chave de clima não foi aceita. Confira OPENWEATHER_API_KEY no .env.')
+        resposta.raise_for_status()
+        dados = resposta.json()
+        return f"O clima em {dados.get('name', cidade)} está em {dados['main']['temp']}°C com {dados['weather'][0]['description']}."
+    except requests.Timeout as exc:
+        raise ErroServico('A consulta de clima demorou demais. Tente novamente.') from exc
+    except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as exc:
+        raise ErroServico('Não consegui consultar o clima agora. Tente novamente mais tarde.') from exc
+
+def buscar_na_web(pergunta):
+    try:
+        with DDGS(timeout=15) as ddgs:
+            resultados = list(ddgs.text(pergunta, max_results=3))
+        fontes = [{'title': str(r.get('title', 'Fonte'))[:200],
+                   'href': str(r.get('href', '')), 'body': str(r.get('body', ''))[:2500]}
+                  for r in resultados if str(r.get('href', '')).startswith(('https://', 'http://'))]
+        if not fontes:
+            raise ErroServico('Não encontrei resultados. Tente uma busca mais específica.')
+        return fontes
+    except ErroServico:
+        raise
+    except Exception as exc:
+        raise ErroServico('A busca web está indisponível. Tente novamente mais tarde.') from exc
 
 def calculadora():
     print("Calculadora iniciada.")
@@ -38,7 +62,6 @@ def calculadora():
         print(f'4 - Divisão: {divisao}')
     except ValueError:
         print("Erro: Por favor, digite apenas números.")
-
 
 def obter_data():
     data_atual = time.localtime()
