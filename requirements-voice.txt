@@ -1,0 +1,5 @@
+﻿SpeechRecognition
+sounddevice
+pyttsx3
+edge-tts
+pygame-ce

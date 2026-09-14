@@ -1,4 +1,4 @@
 ﻿requests
 ollama
-duckduckgo-search
+ddgs
 python-dotenv

@@ -52,6 +52,24 @@ class InterfaceTests(unittest.TestCase):
             self.app.enviar()
             reply.assert_not_called()
 
+    def test_transcription_is_draft_not_automatic_action(self):
+        self.app.gravando = True
+        self.app.fila.put(('transcricao', 'abra o paint'))
+        with patch('interface.responder') as reply:
+            self.root.after_cancel(self.app.timer)
+            self.app.processar_fila()
+            self.assertIn('abra o paint', self.app.entrada.get('1.0', 'end'))
+            self.assertFalse(self.app.gravando)
+            reply.assert_not_called()
+
+    def test_voice_reads_reply(self):
+        self.app.modo.set('voz')
+        with patch('interface.responder', return_value='Olá'), patch('interface.salvar_memoria'), patch.object(self.app.leitor, 'falar') as speak:
+            self.app.entrada.insert('1.0', 'Oi')
+            self.app.enviar()
+            self.esperar()
+            speak.assert_called_once_with('Olá')
+
 
 if __name__ == '__main__':
     unittest.main()

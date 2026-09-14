@@ -1,5 +1,15 @@
 # Omega
 
+## Moto G31 / Termux
+
+Veja [GUIA-G31.md](GUIA-G31.md) para instalar o Omega no celular.
+Após a instalação, use `omega ligar pc`, `omega desligar pc` ou `omega` para conversar.
+No chat, `/ligar`, `/desligar`, `Omega, liga o PC` e `Omega, desliga o PC` usam
+Wake-on-LAN e SSH diretamente, sem passar pelo Ollama. O desligamento é imediato.
+Os dados do PC podem ser ajustados com as variáveis `PC_*` descritas no guia.
+O terminal no Android usa `requirements-termux.txt`; interface e voz do Windows
+continuam no PC. A conversa livre depende do Ollama, conectado por túnel SSH.
+
 Assistente pessoal no terminal, sem login, com Ollama, memória persistente, clima e pesquisa web.
 
 ## Executar
@@ -47,7 +57,7 @@ python -m unittest discover -s tests -v
 Os testes usam arquivos temporários e serviços simulados, sem modificar sua memória real.
 
 Referências das integrações: https://github.com/ollama/ollama-python,
-https://pypi.org/project/duckduckgo-search/ e https://openweathermap.org/current.
+https://pypi.org/project/ddgs/ e https://openweathermap.org/current.
 
 ## Origem e histórico do projeto
 
@@ -89,3 +99,26 @@ podem não ser encontradas. Novos aplicativos podem ser cadastrados no dicionár
 A abertura usa executáveis cadastrados, sem shell nem argumentos livres. O Omega
 informa que solicitou a abertura ao Windows; não verifica o conteúdo da janela.
 Esta versão abre aplicativos, mas ainda não clica, digita ou controla suas janelas.
+
+## Chat e voz
+
+Instale `python -m pip install -r requirements-voice.txt` e abra `python interface.py`.
+Selecione **Chat** para digitar, ou **Voz** para habilitar **Falar** e ouvir as respostas.
+O botão Falar captura oito segundos pelo microfone padrão. A transcrição aparece no campo:
+revise e clique em Enviar. Isso também evita executar pedidos de aplicativos por engano.
+**Parar voz** interrompe a leitura; voltar para Chat também silencia o Omega.
+
+O reconhecimento envia áudio ao Google via SpeechRecognition, exige internet e pede
+consentimento na primeira captura de cada sessão. O áudio não é salvo pelo Omega.
+A leitura é local via pyttsx3 e usa uma voz portuguesa do Windows quando instalada.
+O chat continua funcionando sem as dependências opcionais de voz.
+Referências: https://pypi.org/project/SpeechRecognition/ e https://pypi.org/project/pyttsx3/.
+
+### Voz neural
+
+No seletor **Voz do Omega**, escolha **oproprio** ou **daydiva** e use **Testar voz**.
+oproprio usa ritmo levemente mais lento e tom um pouco mais grave. As duas opções
+usam síntese neural online via edge-tts (serviço Microsoft Edge); o texto da resposta
+é enviado ao serviço após consentimento na interface. O áudio fica em memória.
+**Windows (offline)** mantém a síntese local. A seleção vale para a sessão atual.
+Referência: https://github.com/rany2/edge-tts.

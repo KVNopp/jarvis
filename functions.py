@@ -2,7 +2,6 @@
 import os
 import time
 import requests
-from duckduckgo_search import DDGS
 from memory import carregar_memoria, salvar_memoria
 
 class ErroServico(Exception):
@@ -28,6 +27,10 @@ def obter_clima(cidade):
         raise ErroServico('Não consegui consultar o clima agora. Tente novamente mais tarde.') from exc
 
 def buscar_na_web(pergunta):
+    try:
+        from ddgs import DDGS
+    except ImportError as exc:
+        raise ErroServico('Pesquisa web requer o pacote opcional ddgs: pip install ddgs') from exc
     try:
         with DDGS(timeout=15) as ddgs:
             resultados = list(ddgs.text(pergunta, max_results=3))

@@ -2,7 +2,7 @@
 import json
 import re
 import unicodedata
-import ollama
+import requests
 from config import MODELO, OLLAMA_HOST
 from memory import montar_contexto
 
@@ -11,8 +11,7 @@ class ErroIA(Exception):
 
 def _chat(messages, estruturado=False):
     try:
-        cliente = ollama.Client(host=OLLAMA_HOST, timeout=120)
-        argumentos = {'model': MODELO, 'messages': messages}
+        argumentos = {'model': MODELO, 'messages': messages, 'stream': False}
         if estruturado:
             argumentos.update(format={
                 'type': 'object',
@@ -23,7 +22,10 @@ def _chat(messages, estruturado=False):
                 'required': ['intencao', 'consulta'],
                 'additionalProperties': False,
             }, options={'temperature': 0})
-        resultado = cliente.chat(**argumentos)['message']['content'].strip()
+        resposta = requests.post(OLLAMA_HOST.rstrip('/') + '/api/chat',
+                                 json=argumentos, timeout=(5, 120))
+        resposta.raise_for_status()
+        resultado = resposta.json()['message']['content'].strip()
         if not resultado:
             raise ValueError('Resposta vazia')
         return resultado

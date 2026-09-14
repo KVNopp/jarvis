@@ -9,6 +9,7 @@ from config import MODELO
 from main import AJUDA, CidadeNecessaria, responder
 from memory import ErroMemoria, carregar_memoria, salvar_memoria
 from visualizer import AnelOmega
+from voice import Leitor, ouvir, PERFIS
 
 BG = '#08060d'
 PANEL = '#100b18'
@@ -22,6 +23,11 @@ class OmegaApp:
         self.root = root
         self.fila = queue.Queue()
         self.ocupado = False
+        self.gravando = False
+        self.consentimento_voz = False
+        self.consentimento_neural = False
+        self.leitor = Leitor()
+        self.modo = tk.StringVar(value='chat')
         self.pergunta = ''
         self.memoria = carregar_memoria()
         root.title('Omega | Assistente pessoal')
@@ -82,6 +88,26 @@ class OmegaApp:
         self.enviar_botao = self.botao(compositor, 'Enviar  →', self.enviar, destaque=True)
         self.enviar_botao.grid(row=0, column=1, sticky='se')
         self.label(principal, 'Enter para enviar · Shift + Enter para uma nova linha', 9, MUTED, BG).grid(row=5, column=0, sticky='w', pady=(10, 0))
+        controles_voz = tk.Frame(principal, bg=BG)
+        controles_voz.grid(row=6, column=0, sticky='ew', pady=(8, 0))
+        for titulo, valor in [('Chat', 'chat'), ('Voz', 'voz')]:
+            tk.Radiobutton(controles_voz, text=titulo, value=valor, variable=self.modo,
+                           command=self.mudar_modo, bg=BG, fg=TEXT, selectcolor=PANEL,
+                           activebackground=BG, activeforeground=ACCENT).pack(side='left')
+        self.microfone = self.botao(controles_voz, 'Falar', self.gravar)
+        self.microfone.pack(side='left', padx=8)
+        self.microfone.configure(state='disabled')
+        self.botao(controles_voz, 'Parar voz', self.leitor.parar).pack(side='left')
+        seletor = tk.Frame(principal, bg=BG)
+        seletor.grid(row=7, column=0, sticky='ew', pady=(6, 0))
+        self.label(seletor, 'Voz do Omega', 9, MUTED, BG).pack(side='left', padx=(0, 8))
+        self.perfil_voz = tk.StringVar(value=self.leitor.perfil)
+        escolha = tk.OptionMenu(seletor, self.perfil_voz, *PERFIS, command=self.escolher_voz)
+        escolha.configure(bg=PANEL, fg=TEXT, activebackground=PANEL, activeforeground=ACCENT,
+                          highlightthickness=0, relief='flat')
+        escolha['menu'].configure(bg=PANEL, fg=TEXT)
+        escolha.pack(side='left')
+        self.botao(seletor, 'Testar voz', self.testar_voz).pack(side='left', padx=8)
         visiveis = [m for m in self.memoria if m['role'] != 'system']
         if len(visiveis) > 60:
             self.mensagem('info', 'Mostrando as 60 mensagens mais recentes. O histórico completo continua salvo.')
@@ -97,6 +123,53 @@ class OmegaApp:
     def cancelar_timer(self, event):
         if event.widget is self.root:
             self.root.after_cancel(self.timer)
+            self.leitor.parar()
+
+    def mudar_modo(self):
+        if self.modo.get() == 'chat':
+            self.leitor.parar()
+        self.microfone.configure(state='normal' if self.modo.get() == 'voz' and not self.ocupado and not self.gravando else 'disabled')
+
+    def escolher_voz(self, perfil):
+        if PERFIS[perfil] and not self.consentimento_neural:
+            self.consentimento_neural = messagebox.askyesno('Voz neural online',
+                'Esta voz envia o texto das respostas ao serviço de voz da Microsoft para gerar áudio. '
+                'Precisa de internet. Deseja usar?', parent=self.root)
+            if not self.consentimento_neural:
+                self.perfil_voz.set(self.leitor.perfil)
+                return
+        self.leitor.parar()
+        self.leitor.perfil = perfil
+
+    def testar_voz(self):
+        if self.gravando:
+            return
+        try:
+            self.leitor.falar('Olá, Keven. Eu sou o Omega. Estou pronto para conversar com você.')
+        except Exception as exc:
+            self.mensagem('info', f'Leitura indisponível: {exc}')
+
+    def gravar(self):
+        if self.ocupado or self.gravando or self.modo.get() != 'voz':
+            return
+        if not self.consentimento_voz:
+            self.consentimento_voz = messagebox.askyesno('Reconhecimento de voz online',
+                'Ao clicar em Falar, o áudio capturado será enviado ao Google para transcrição em português. '
+                'O microfone só será usado após seu clique. Continuar?', parent=self.root)
+            if not self.consentimento_voz:
+                return
+        self.leitor.parar()
+        self.gravando = True
+        self.enviar_botao.configure(state='disabled')
+        self.microfone.configure(state='disabled')
+        self.status.set('Ouvindo... fale agora (captura de 8 segundos)')
+        threading.Thread(target=self.capturar_voz, daemon=True).start()
+
+    def capturar_voz(self):
+        try:
+            self.fila.put(('transcricao', ouvir()))
+        except Exception as exc:
+            self.fila.put(('erro_voz', str(exc)))
 
     def label(self, parent, texto, tamanho, cor, fundo=PANEL):
         return tk.Label(parent, text=texto, bg=fundo, fg=cor, font=('Segoe UI', tamanho), anchor='w')
@@ -142,14 +215,16 @@ class OmegaApp:
         for botao in self.atalhos:
             botao.configure(state=estado)
         self.status.set('Omega pensando...' if valor else 'Pronto para conversar')
+        self.mudar_modo()
 
     def alternar_animacao(self):
         pausado = self.anel.alternar()
         self.animacao_botao.configure(text='Retomar animação' if pausado else 'Pausar animação')
 
     def enviar(self):
-        if self.ocupado:
+        if self.ocupado or self.gravando:
             return
+        self.leitor.parar()
         pergunta = self.entrada.get('1.0', 'end').strip()
         if not pergunta:
             return
@@ -163,7 +238,7 @@ class OmegaApp:
                 messagebox.showinfo('Memória', f'{len(self.memoria)} registros salvos.', parent=self.root)
             self.entrada.delete('1.0', 'end')
             return
-        if pergunta.startswith('/') and pergunta.split()[0].lower() not in {'/hora', '/data', '/clima', '/buscar', '/abrir', '/apps'}:
+        if pergunta.startswith('/') and pergunta.split()[0].lower() not in {'/hora', '/data', '/clima', '/buscar', '/abrir', '/apps', '/ligar', '/desligar'}:
             self.mensagem('info', 'Comando desconhecido. Consulte Ajuda e comandos.')
             return
         self.pergunta = pergunta
@@ -187,12 +262,28 @@ class OmegaApp:
             self.fila.put(('erro', str(exc)))
 
     def processar_fila(self):
+        processo = self.leitor.processo
+        if processo is not None and processo.poll() is not None:
+            if processo.returncode != 0:
+                self.mensagem('info', 'A leitura de voz falhou. Para voz online, confira a conexão ou tente Windows (offline).')
+            self.leitor.processo = None
         try:
             tipo, valor = self.fila.get_nowait()
         except queue.Empty:
             self.timer = self.root.after(100, self.processar_fila)
             return
-        if tipo == 'cidade':
+        if tipo in {'transcricao', 'erro_voz'}:
+            self.gravando = False
+            self.enviar_botao.configure(state='normal')
+            self.mudar_modo()
+            if tipo == 'transcricao':
+                self.entrada.insert('end', ('\n' if self.entrada.get('1.0', 'end').strip() else '') + valor)
+                self.status.set('Fala transcrita. Confira e clique em Enviar.')
+                self.entrada.focus_set()
+            else:
+                self.status.set('Não foi possível transcrever')
+                self.mensagem('info', valor)
+        elif tipo == 'cidade':
             self.status.set('Aguardando cidade')
             cidade = simpledialog.askstring('Consultar clima', 'De qual cidade?', parent=self.root)
             if cidade and cidade.strip():
@@ -212,13 +303,18 @@ class OmegaApp:
                 self.memoria = nova
                 self.atualizar_contagem()
             self.definir_ocupado(False)
+            if self.modo.get() == 'voz':
+                try:
+                    self.leitor.falar(valor)
+                except Exception as exc:
+                    self.mensagem('info', f'Leitura indisponível: {exc}')
         else:
             self.mensagem('info', f'Não foi possível responder: {valor}\nVocê pode tentar novamente.')
             self.definir_ocupado(False)
         self.timer = self.root.after(100, self.processar_fila)
 
     def fechar(self):
-        if self.ocupado and not messagebox.askyesno('Encerrar Omega', 'Há uma resposta em andamento. Sair sem salvá-la?', parent=self.root):
+        if (self.ocupado or self.gravando) and not messagebox.askyesno('Encerrar Omega', 'Há uma operação em andamento. Sair sem esperar?', parent=self.root):
             return
         self.root.destroy()
 
