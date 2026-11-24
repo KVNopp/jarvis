@@ -1,8 +1,8 @@
 # Omega
 
-## Moto G31 / Termux
+## Celular (Termux)
 
-Veja [GUIA-G31.md](GUIA-G31.md) para instalar o Omega no celular.
+Veja [GUIA-CELULAR.md](GUIA-CELULAR.md) para instalar o Omega no celular, direto do GitHub.
 Após a instalação, use `omega ligar pc`, `omega desligar pc` ou `omega` para conversar.
 No chat, `/ligar`, `/desligar`, `Omega, liga o PC` e `Omega, desliga o PC` usam
 Wake-on-LAN e SSH diretamente, sem passar pelo Ollama. O desligamento é imediato.

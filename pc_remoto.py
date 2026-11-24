@@ -43,7 +43,7 @@ def executar(acao):
         raise ErroPC('Use ligar pc ou desligar pc.')
     chave = Path(os.getenv('PC_SSH_KEY', '~/.ssh/pc_controle')).expanduser()
     if not chave.is_file():
-        raise ErroPC(f'Chave SSH não encontrada: {chave}. Use a chave já configurada no G31.')
+        raise ErroPC(f'Chave SSH não encontrada: {chave}. Crie a chave seguindo o GUIA-CELULAR.md.')
     comando = ['ssh', '-i', str(chave), '-o', 'IdentitiesOnly=yes',
                '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10',
                '-l', os.getenv('PC_USER', r'kvn-opp\keven'),
