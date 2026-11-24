@@ -7,3 +7,5 @@ memoria*.tmp
 .venv/
 lifeos_sessao.json
 lifeos_sessao.tmp
+.env.*
+!.env.example
