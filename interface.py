@@ -6,7 +6,7 @@ from tkinter import messagebox, simpledialog
 from tkinter.scrolledtext import ScrolledText
 
 from config import MODELO
-from main import AJUDA, CidadeNecessaria, responder
+from main import AJUDA, CidadeNecessaria, comando_conhecido, eh_login_lifeos, responder
 from memory import ErroMemoria, carregar_memoria, salvar_memoria
 from visualizer import AnelOmega
 from voice import Leitor, ouvir, PERFIS
@@ -238,7 +238,10 @@ class OmegaApp:
                 messagebox.showinfo('Memória', f'{len(self.memoria)} registros salvos.', parent=self.root)
             self.entrada.delete('1.0', 'end')
             return
-        if pergunta.startswith('/') and pergunta.split()[0].lower() not in {'/hora', '/data', '/clima', '/buscar', '/abrir', '/apps', '/ligar', '/desligar'}:
+        if eh_login_lifeos(pergunta):
+            self.mensagem('info', 'Para entrar no LIFE OS, use o terminal: python main.py /lifeos entrar')
+            return
+        if not comando_conhecido(pergunta):
             self.mensagem('info', 'Comando desconhecido. Consulte Ajuda e comandos.')
             return
         self.pergunta = pergunta

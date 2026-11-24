@@ -1,6 +1,7 @@
 ﻿"""Omega: conversa direta no terminal, sem login."""
 import functions
 import computer
+import life_os
 import pc_remoto
 import sys
 from brain import ollama_brain
@@ -16,11 +17,32 @@ AJUDA = '''Comandos
   /apps              Listar aplicativos compatíveis
   /ligar             Ligar o PC pela rede local
   /desligar          Desligar o PC por SSH (imediato)
-  /memoria           Ver quantas mensagens estão guardadas
+LIFE OS
+  /hoje              Tarefas e hábitos de hoje
+  /tarefas           Listar tarefas abertas
+  /tarefa nome amanhã  Criar tarefa (prazo opcional: hoje, amanhã, 05/12)
+  /feito nome        Concluir uma tarefa
+  /habito nome       Marcar um hábito como feito hoje
+  /lifeos entrar     Entrar na conta do LIFE OS (só no terminal)
+  /lifeos            Ver a conexão; /lifeos sair desconecta
+  /memoria          Ver quantas mensagens estão guardadas
   /sair              Encerrar
 Você também pode perguntar normalmente.'''
 
 AVISO_PENSANDO = '  Omega pensando...'
+COMANDOS = {'/hora', '/data', '/clima', '/buscar', '/abrir', '/apps', '/ligar', '/desligar'}
+ERROS = (functions.ErroServico, pc_remoto.ErroPC, ollama_brain.ErroIA, ErroMemoria, life_os.ErroLifeOS)
+
+
+def comando_conhecido(pergunta):
+    """Texto livre sempre vale; comandos com / precisam existir."""
+    if not pergunta.startswith('/'):
+        return True
+    return pergunta.split()[0].lower() in COMANDOS or life_os.pedido(pergunta) is not None
+
+
+def eh_login_lifeos(pergunta):
+    return life_os.pedido(pergunta) == ('entrar', ())
 
 
 def limpar_aviso_pensando():
@@ -40,6 +62,9 @@ def responder(pergunta, memoria, *, interativo=True):
     aplicativo = computer.pedido_abertura(pergunta)
     if aplicativo is not None:
         return computer.abrir_app(aplicativo)
+    pedido_lifeos = life_os.pedido(pergunta)
+    if pedido_lifeos:
+        return life_os.executar(*pedido_lifeos)
     comando, _, argumento = pergunta.partition(' ')
     rotas = {'/hora': 'HORA', '/data': 'DATA', '/clima': 'CLIMA', '/buscar': 'WEB'}
     if comando.lower() in rotas:
@@ -96,7 +121,10 @@ def executar():
             if comando == '/memoria':
                 print(f'Omega: {len(memoria)} registros preservados em memoria.json.')
                 continue
-            if pergunta.startswith('/') and pergunta.split()[0].lower() not in {'/hora', '/data', '/clima', '/buscar', '/abrir', '/apps', '/ligar', '/desligar'}:
+            if eh_login_lifeos(pergunta):
+                print('Omega: ' + life_os.entrar_interativo())
+                continue
+            if not comando_conhecido(pergunta):
                 print('Comando desconhecido. Digite /ajuda.')
                 continue
             print(AVISO_PENSANDO, end='', flush=True)
@@ -108,7 +136,7 @@ def executar():
             print(f'\nOmega > {resposta}')
             salvar_memoria(nova_memoria)
             memoria = nova_memoria
-        except (functions.ErroServico, pc_remoto.ErroPC, ollama_brain.ErroIA, ErroMemoria) as exc:
+        except ERROS as exc:
             print(f'\nOmega: {exc}')
         except (EOFError, KeyboardInterrupt):
             break
@@ -130,6 +158,9 @@ def executar_argumentos(argumentos):
         if acao:
             print('Omega: ' + pc_remoto.executar(acao))
             return 0
+        if eh_login_lifeos(pergunta):
+            print('Omega: ' + life_os.entrar_interativo())
+            return 0
         memoria = carregar_memoria()
         resposta = responder(pergunta, memoria, interativo=False)
         print('Omega: ' + resposta)
@@ -139,7 +170,7 @@ def executar_argumentos(argumentos):
     except CidadeNecessaria:
         print('Omega: Informe a cidade: omega /clima nome da cidade')
         return 1
-    except (functions.ErroServico, pc_remoto.ErroPC, ollama_brain.ErroIA, ErroMemoria) as exc:
+    except ERROS as exc:
         print(f'Omega: {exc}')
         return 1
 

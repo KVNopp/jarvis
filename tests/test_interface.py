@@ -47,6 +47,20 @@ class InterfaceTests(unittest.TestCase):
             save.assert_not_called()
             self.assertIn('offline', self.app.chat.get('1.0', 'end'))
 
+    def test_life_os_commands_are_accepted(self):
+        self.app.entrada.insert('1.0', '/hoje')
+        with patch('interface.responder', return_value='Hoje, terça') as reply, patch('interface.salvar_memoria'):
+            self.app.enviar()
+            self.esperar()
+        reply.assert_called_once()
+
+    def test_life_os_login_points_to_terminal(self):
+        self.app.entrada.insert('1.0', '/lifeos entrar')
+        with patch('interface.responder') as reply:
+            self.app.enviar()
+        reply.assert_not_called()
+        self.assertIn('terminal', self.app.chat.get('1.0', 'end'))
+
     def test_empty_input(self):
         with patch('interface.responder') as reply:
             self.app.enviar()
