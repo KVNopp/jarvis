@@ -29,6 +29,34 @@ Converse normalmente ou use `/ajuda`, `/hora`, `/data`, `/clima São Paulo`,
 `/buscar assunto`, `/memoria` e `/sair`. Ctrl+C também encerra.
 Hora e data por comando funcionam mesmo com o Ollama desligado.
 
+## LIFE OS (tarefas e hábitos)
+
+O Omega lê e grava direto no [LIFE OS](https://github.com/KVNopp/life-os), pelo mesmo Supabase.
+O que ele cria aparece no app do PC e do celular em segundos.
+
+Configurar (uma vez):
+
+1. No `.env`, preencha `LIFEOS_SUPABASE_URL` e `LIFEOS_SUPABASE_KEY` com os mesmos valores de
+   **LIFE OS → Ajustes → Projeto Supabase** (a chave pública *anon*, nunca a *service_role*).
+2. No terminal: `python main.py /lifeos entrar` e digite o e-mail e a senha da sua conta do LIFE OS.
+   A senha não é salva: o Omega guarda só o token da sessão em `lifeos_sessao.json`, que é renovado
+   sozinho e ignorado pelo Git. `/lifeos sair` apaga essa sessão.
+
+Usar (no terminal, na interface ou no Termux; não precisa do Ollama):
+
+| Comando | Frase equivalente |
+|---|---|
+| `/hoje` | "o que eu tenho pra hoje?", "como está meu dia?" |
+| `/tarefas` | "quais são minhas tarefas" |
+| `/tarefa Estudar física amanhã` | "cria a tarefa estudar física pra amanhã" |
+| `/feito Estudar física` | "terminei a tarefa estudar física" |
+| `/habito Leitura` | "marquei o hábito de leitura" |
+
+O prazo da tarefa é opcional: `hoje`, `amanhã`, `depois de amanhã`, `05/12` ou `05/12/2027`.
+Para concluir tarefas e marcar hábitos basta parte do nome; se houver mais de um parecido,
+o Omega lista as opções. Se o mesmo item for editado no app ao mesmo tempo, vale a regra do
+LIFE OS: vence a edição mais recente, e o Omega avisa para tentar de novo.
+
 ## Memória
 
 O arquivo `memoria.json` original continua sendo utilizado, sempre relativo à pasta do projeto.
