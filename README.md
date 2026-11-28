@@ -1,5 +1,34 @@
 # Omega
 
+Assistente pessoal em Python que roda no terminal, numa interface gráfica (Tkinter) e no celular (Termux), usando IA local com Ollama.
+
+## ✨ O que ele faz
+
+- **Roteamento de intenções:** antes de responder, classifica o pedido (hora, data, clima, pesquisa na web ou conversa) e chama a função certa.
+- **Memória persistente** em JSON, com gravação segura (arquivo temporário + backup) e recuperação de trechos antigos por palavras-chave.
+- **Pesquisa na web** (DuckDuckGo) e **clima** (OpenWeather).
+- **Integração com o [LIFE OS](https://github.com/KVNopp/life-os):** cria e conclui tarefas e marca hábitos direto no Supabase, sincronizado com o app.
+- **Controle do PC:** liga por Wake-on-LAN e desliga por SSH, inclusive pelo celular.
+- **Voz:** reconhecimento de fala e leitura das respostas, com vozes neurais (edge-tts) ou locais.
+- **Abre aplicativos** do Windows por comando de texto ou voz.
+- **Testes automatizados** com `unittest`, usando arquivos temporários e serviços simulados.
+
+## 🛠️ Tecnologias
+
+Python · Ollama (llama3) · Supabase · Tkinter · SpeechRecognition · pyttsx3 · edge-tts · SSH / Wake-on-LAN
+
+## 🚀 Começo rápido
+
+```bash
+python -m pip install -r requirements.txt
+python main.py          # terminal
+python interface.py     # interface gráfica
+```
+
+Detalhes de configuração, uso e cada recurso estão nas seções abaixo.
+
+---
+
 ## Celular (Termux)
 
 Veja [GUIA-CELULAR.md](GUIA-CELULAR.md) para instalar o Omega no celular, direto do GitHub.
